@@ -83,11 +83,22 @@ void zwolnij_plansze(Plansza* plansza){
 }
 
 int main(){
+	FILE *logo = fopen("logo", "r");
 	int trudnosc;
-	printf("Minesweeper\n");
-	printf("Prosze wybrac poziom trudnosci:\n");
+    if (logo == NULL) {
+		perror("Nie można otworzyć pliku");
+		return 1;
+    }
+
+    char linia[256];
+    while (fgets(linia, sizeof(linia), logo)) {
+		printf("%s", linia);
+    }
+	printf("Witaj w grze Minesweeper!\n");
+	printf("Wybierz poziom trudnosci:\n");
 	printf("Latwy\t\t- 1\nNormalny\t- 2\nTrudny\t\t- 3\n");
 	scanf("%d", &trudnosc);
 	printf("Wybrany poziom trudnosci to: %d\n", trudnosc);	
+	fclose(logo);
 	return 0;
 }
