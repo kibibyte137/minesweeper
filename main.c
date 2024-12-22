@@ -23,21 +23,21 @@
 	CZY_MINA(pole) ? MINA : \
 	CZY_LICZBA(pole) ? LICZBA((pole).sasiednie_miny) : PUSTE)
 
-typedef struct{ /*Struktura dla wspolrzednych*/
-	int x; 		/*Numer wiersza*/
-	int y; 		/*Numer kolumny*/
+typedef struct{	/*Struktura dla wspolrzednych*/
+	int x;		/*Numer wiersza*/
+	int y;		/*Numer kolumny*/
 } Punkt;
 
-typedef struct{ 			/*Struktura dla pola*/
-	int mina; 				/*1, jesli pole zawiera mine, 0 w przeciwnym wypadku*/
-	int sasiednie_miny; 	/*Liczba sasiadujacych min*/
-	char stan; 				/*Stan pola: ZAKRYTE, ODKRYTE, FLAGA*/
-	Punkt wspolrzedne; 		/*Współrzedne pola (wiersz, kolumna)*/
+typedef struct{				/*Struktura dla pola*/
+	int mina;				/*1, jesli pole zawiera mine, 0 w przeciwnym wypadku*/
+	int sasiednie_miny;		/*Liczba sasiadujacych min*/
+	char stan;				/*Stan pola: ZAKRYTE, ODKRYTE, FLAGA*/
+	Punkt wspolrzedne;		/*Współrzedne pola (wiersz, kolumna)*/
 } Pole;
 
 typedef struct{		/*Struktura dla planszy*/
-	int wiersze; 	/*Liczba wierszy planszy*/
-	int kolumny; 	/*Liczba kolumn planszy*/
+	int wiersze;	/*Liczba wierszy planszy*/
+	int kolumny;	/*Liczba kolumn planszy*/
 	int miny;		/*Liczba min na planszy*/
 	Pole** pola;	/*Dwuwymiarowa tablica struktur Pole*/
 } Plansza; 
