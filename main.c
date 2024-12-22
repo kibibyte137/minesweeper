@@ -1,24 +1,48 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define POLE '.'
-#define ZAKRYTE '#'
-#define MINA 'X'
-#define FLAGA 'P'
+/*Symbole graficznej reprezentacji planszy*/
+#define PUSTE		'.'  /* Odkryte puste pole */
+#define ZAKRYTE		'#'  /* Zakryte pole */
+#define MINA		'X'  /* Odkryte pole z miną */
+#define FLAGA		'P'  /* Zakryte pole z flagą */
+#define LICZBA(x)	('0' + (x)) /* Odkryte pole z liczbą (1-8) */
 
-typedef struct{
-	int x;
-	int y;
+/*Warunki sprawdzania stanu pola*/
+#define CZY_PUSTE(pole)		((pole).sasiednie_miny == 0 && (pole).mina == 0)
+#define CZY_ZAKRYTE(pole)	((pole).stan == ZAKRYTE)
+#define CZY_FLAGA(pole)		((pole).stan == FLAGA)
+#define CZY_MINA(pole)		((pole).mina == 1)
+#define CZY_LICZBA(pole)	((pole).sasiednie_miny > 0 && (pole).mina == 0)
+#define CZY_ODKRYTE(pole)	((pole).stan != ZAKRYTE && (pole).stan != FLAGA)
+
+/*Symbol pola na podstawie jego stanu*/
+#define SYMBOL_POLA(pole) \
+	(CZY_ZAKRYTE(pole) ? ZAKRYTE : \
+	CZY_FLAGA(pole) ? FLAGA : \
+	CZY_MINA(pole) ? MINA : \
+	CZY_LICZBA(pole) ? LICZBA((pole).sasiednie_miny) : PUSTE)
+
+typedef struct{ /*Struktura dla wspolrzednych*/
+	int x; 		/*Numer wiersza*/
+	int y; 		/*Numer kolumny*/
 } Punkt;
 
-typedef struct{
-	int wiersze;
-	int kolumny;
-	int bomby;
-	char** plansza_logiczna;
-	char** plansza_widoczna; 
+typedef struct{ 			/*Struktura dla pola*/
+	int mina; 				/*1, jesli pole zawiera mine, 0 w przeciwnym wypadku*/
+	int sasiednie_miny; 	/*Liczba sasiadujacych min*/
+	char stan; 				/*Stan pola: ZAKRYTE, ODKRYTE, FLAGA*/
+	Punkt wspolrzedne; 		/*Współrzedne pola (wiersz, kolumna)*/
+} Pole;
+
+typedef struct{		/*Struktura dla planszy*/
+	int wiersze; 	/*Liczba wierszy planszy*/
+	int kolumny; 	/*Liczba kolumn planszy*/
+	int miny;		/*Liczba min na planszy*/
+	Pole** pola;	/*Dwuwymiarowa tablica struktur Pole*/
 } Plansza; 
 
+/*Do zmiany !!*/
 void **alokuj_pamiec(int wiersze, int kolumny, size_t rozmiar_elementu){
 	void **tablica = (void **)malloc(wiersze * sizeof(void *));
 	if (!tablica){
