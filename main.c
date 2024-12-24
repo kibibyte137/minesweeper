@@ -2,11 +2,11 @@
 #include <stdlib.h>
 
 /*Symbole graficznej reprezentacji planszy*/
-#define PUSTE		'.'  /* Odkryte puste pole */
-#define ZAKRYTE		'#'  /* Zakryte pole */
-#define MINA		'X'  /* Odkryte pole z miną */
-#define FLAGA		'P'  /* Zakryte pole z flagą */
-#define LICZBA(x)	('0' + (x)) /* Odkryte pole z liczbą (1-8) */
+#define PUSTE		'.'  		/*Odkryte puste pole*/
+#define ZAKRYTE		'#'			/*Zakryte pole*/
+#define MINA		'X'			/*Odkryte pole z miną*/
+#define FLAGA		'P'			/*Zakryte pole z flagą*/
+#define LICZBA(x)	('0' + (x))	/*Odkryte pole z liczbą (1-8)*/
 
 /*Warunki sprawdzania stanu pola*/
 #define CZY_PUSTE(pole)		((pole).sasiednie_miny == 0 && (pole).mina == 0)
@@ -42,43 +42,101 @@ typedef struct{		/*Struktura dla planszy*/
 	Pole** pola;	/*Dwuwymiarowa tablica struktur Pole*/
 } Plansza; 
 
-/*Do zmiany !!*/
-void **alokuj_pamiec(int wiersze, int kolumny, size_t rozmiar_elementu){
-	void **tablica = (void **)malloc(wiersze * sizeof(void *));
-	if (!tablica){
-		printf("Blad alokacji pamieci dla tablicy.\n"); 
-		return NULL; 
+/*	Funkcja alokuj_plansze
+	Alokuje pamiec dla struktury Plansza oraz dwuwymiarowej tabilcy pol.
+	Parametry:
+		wiersze - liczba wierszy planszy
+		kolumny - liczba kolumn planszy
+	Zwraca:
+		Wskaznik do zaalokowanej struktury Plansza lub NULL w przypadku bledu.
+*/
+
+Plansza* alokuj_plansze(int wiersze, int kolumny){
+	Plansza* plansza = malloc(sizeof(Plansza)); /*Alokacja pamieci dla struktury Plansza*/
+	if(!plansza){ /*Obsluga bledu alokacji - wypisanie komunikatu oraz zwrocenie NULL*/
+		printf("Blad alokacji pamieci dla struktury Plansza.\n");
+		return NULL;
 	}
-	for (int i = 0; i < wiersze; i++){ 
-		tablica[i] = malloc(kolumny * rozmiar_elementu);
-		if (!tablica[i]){ 
-			printf("Blad alokacji pamieci dla wiersza %d.\n", i); 
-			for (int j = 0; j < i; j++){ 
-				free(tablica[j]);
+	
+	/*Ustawienie podstawowych parametrow planszy*/
+	plansza->wiersze = wiersze;	/*Ustawienie liczby wierszy planszy*/
+	plansza->kolumny = kolumny;	/*Ustawienie liczby kolumn planszy*/
+	plansza->miny = 0;			/*Liczba min zostanie ustawiona w inicjalizacji*/
+	
+	plansza->pola = malloc(wiersze * sizeof(Pole*)); /*Alokacja pamieci dla dwuwymiarowej tablicy wskaznikow do pol*/
+	if(!plansza->pola){ /*Obsluga bledu alokacji - wypisanie komunikatu, zwolnienie wczesniej zaalokowanej pamieci oraz zwrocenie NULL*/
+		printf("Blad alokacji pamieci dla pol planszy.\n");
+		free(plansza);
+		return NULL;
+	}
+	
+	for(int i = 0; i < wiersze; i++){ /*Alokacja pamieci dla kazdego wiersza pol*/
+		plansza->pola[i] = malloc(kolumny * sizeof(Pole));
+		if(!plansza->pola[i]){ /*Obsluga bledu alokacji - wypisanie komunikatu, zwolnienie wczesniej zaalokowanej pamieci oraz zwrocenie NULL*/
+			printf("Blad alokacji pamieci dla wiersza %d.\n", i);
+			for(int j = 0; j < i; j++){
+				free(plansza->pola[j]);
 			}
-			free(tablica); 
+			free(plansza->pola);
+			free(plansza);
 			return NULL;
 		}
 	}
-	return tablica;
+	
+	return plansza;
 }
 
-void zwolnij_pamiec(void **tablica, int wiersze){
-	for (int i = 0; i < wiersze; i++){
-		free(tablica[i]);
+/*	Funkcja inicjuj_plansze
+	Inicjalizuje wartosci pol planszy oraz ustawia liczbe min.
+	Parametry:
+		plansza - wskaznik do struktury Plansza z zaalokowana pamiecia
+		liczba_min - liczba min do ustawienia na planszy
+	Dzialanie:
+		Ustawia wszystkie pola jako zakryte, bez min, z zerowa liczba sasiadujacych min.
+		Ustawia liczbe min w strukturze Plansza.
+*/
+
+void inicjuj_plansze(Plansza* plansza, int liczba_min){
+	if(!plansza){ /*Sprawdzenie, czy wskaznik plansza nie jest NULL*/
+		printf("Nie mozna zainicjalizowac planszy: wskaznik NULL.\n");
+		return;
 	}
-	free(tablica);
-}
-
-void inicjuj_plansze(Plansza* plansza){
-	for (int i = 0; i < plansza->wiersze; i++){
-		for (int j = 0; j < plansza->kolumny; j++){
-			plansza->plansza_logiczna[i][j] = POLE;
-			plansza->plansza_widoczna[i][j] = ZAKRYTE;
+	
+	plansza->miny = liczba_min; /*Ustawienie liczby min na planszy*/
+	
+	/*Inicjalizacja kazdego pola planszy*/
+	for(int i = 0; i < plansza->wiersze; i++){
+		for(int j = 0; j < plansza->kolumny; j++){
+			plansza->pola[i][j] = (Pole){
+				.mina = 0,				/*Pole poczatkowo nie zawiera miny*/
+				.sasiednie_miny = 0,	/*Brak sasiadujacych min*/
+				.stan = ZAKRYTE,		/*Pole jest zakryte*/
+				.wspolrzedne = {i, j}	/*Wspolrzedne pola*/
+			};
 		}
 	}
+	
+	/*Funkcja rozmiesc_miny (logika rozmieszczania min planowana jest jego osobna funkcja)*/
 }
 
+/*	Funkcja zwolnij_plansze
+	Zwalnia pamiec zaalokowana dla planszy i jej pol.
+	Parametry:
+		plansza - wskaznik do struktury Plansza
+	Dzialanie:
+		Zwalnia pamiec dla wszystkich wierszy pol, samej tablicy wskaznikow oraz struktury Plansza.
+*/
+
+void zwolnij_plansze(Plansza* plansza){
+	if(!plansza) return; /*Przerwij, jesli pamiec dla planszy nie zostala zaalokowana*/
+	for(int i = 0; i < plansza->wiersze; i++){ /*Zwolnienie pamieci dla kazdego wiersza*/
+		free(plansza->pola[i]);
+	}
+	free(plansza->pola); /*Zwolnienie pamieci dla tablicy wskaznikow*/
+	free(plansza); /*Zwolnienie pamieci dla struktury Plansza*/
+}
+
+/*Do zmiany!!*/
 void wypisz_plansze_widoczna(Plansza* plansza){
 	for (int i = 0; i < plansza->wiersze; i++){
 		for (int j = 0; j < plansza->kolumny; j++){
@@ -95,14 +153,6 @@ void wypisz_plansze_logiczna(Plansza* plansza){
 			printf("%c ", plansza->plansza_logiczna[i][j]);
 		}
 		printf("\n");
-	}
-}
-
-void zwolnij_plansze(Plansza* plansza){
-	if (plansza){
-		zwolnij_pamiec((void**)plansza->plansza_logiczna, plansza->wiersze);
-		zwolnij_pamiec((void**)plansza->plansza_widoczna, plansza->wiersze);
-		free(plansza);
 	}
 }
 
