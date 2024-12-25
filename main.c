@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 /*Symbole graficznej reprezentacji planszy*/
 #define PUSTE		'.'  		/*Odkryte puste pole*/
@@ -136,7 +137,107 @@ void zwolnij_plansze(Plansza* plansza){
 	free(plansza); /*Zwolnienie pamieci dla struktury Plansza*/
 }
 
-/*Do zmiany!!*/
+/*	Funkcja rozmiesc_miny
+	Rozmieszcza miny na planszy w losowych miejscach, z zachowaniem zasad:
+	- Min nie mozna umiescic na polach odkrytych.
+	- Liczba rozmieszczonych min odpowiada zadanej liczbie min w planszy.
+	Parametry:
+		plansza - wskaznik do struktury Plansza
+	Dzialanie:
+		Ustawia 'plansza->miny' min w losowych miejscach na planszy.
+*/
+
+void rozmiesc_miny(Plansza* plansza){
+	if(!plansza){ /*Sprawdzenie, czy wskaznik plansza nie jest NULL*/
+		printf("Nie mozna rozmiescic min: wskaznik NULL\n");
+		return;
+	}
+	
+	srand(time(NULL)); /*Inicjalizacja generatora liczb losowych*/
+	
+	int miny_do_umieszczenia = plansza->miny; /*Ustawienie liczby min do umieszczenia*/
+	int wiersze = plansza->wiersze; /*Ustawienie liczby wierszy planszy*/
+	int kolumny = plansza->kolumny; /*Ustawienie liczby kolumn planszy*/
+	
+	while(miny_do_umieszczenia > 0){
+		int losowy_wiersz = rand() % wiersze; /*Losowy wiersz*/
+		int losowa_kolumna = rand() % kolumny; /*Losowa kolumna*/
+		
+		Pole* pole = &plansza->pola[losowy_wiersz][losowa_kolumna];
+		
+		if(CZY_ZAKRYTE(*pole) && !pole->mina){ /*Mine umiescic mozna tylko na polu zakrytym, ktore nie ma jeszcze miny*/
+			pole->mina = 1; /*Ustawienie miny*/
+			miny_do_umieszczenia--; /*Zmniejszenie liczby min do umieszczenia o 1*/
+		}
+	}
+}
+
+/*	Funkcja oblicz_sasiednie_miny
+	Oblicza liczbe min sasiadujacych z kazdym polem na planszy i aktualizuje wartosc 'sasiednie_miny' dla kazdego pola.
+	Parametry:
+		plansza - wskaznik do struktury Plansza zawierajacej pola do analizy
+	Dzialanie:
+		1. Iteruje po kazdym polu planszy.
+		2. Resetuje wartosc 'sasiednie_miny' dla biezacego pola do 0.
+		3. Sprawdza wszystkie 8 sasiednich pol wzgledem biezacego pola.
+		4. Dla kazdego sasiedniego pola:
+			- Sprawdza, czy pole znajduje sie w granicach planszy.
+			- Jesli pole zawiera mine, zwieksza wartosc 'sasiednie_miny' biezacego pola o 1.
+	Uwagi:
+		- Funkcja zaklada, ze plansza zostala wczesniej zainicjalizowana i zawiera informacje o minach.
+		- Resetowanie 'sasiednie_miny' przed obliczeniem jest konieczne, by uniknac kumulacji wczesniejszych wartosci.
+*/
+
+void oblicz_sasiednie_miny(Plansza* plansza){
+	int kierunki[8][2] = { /*Tablica przesuniec dla 8 kierunkow*/
+		{-1, -1},	{-1, 0},	{-1, 1},	/*Gorne sasiedzwtow*/
+		{ 0, -1},				{ 0, 1},	/*Lewe i prawe sasiedztwo*/
+		{ 1, -1},	{ 1, 0},	{ 1, 1}		/*Dolne sasiedztwo*/
+	};
+	
+	/*Iteracja po kazdym polu planszy*/
+	for(int x = 0; x < plansza->wiersze; x++){
+		for(int y = 0; y < plansza->kolumny; y++){
+			Pole* pole = &plansza->pola[x][y];
+			pole->sasiednie_miny = 0; /*Reset liczby sasiednich min*/
+			
+			/*Sprawdzenie wszystkich sasiednich pol*/
+			for(int k = 0; k < 8; k++){
+				int nx = x + kierunki[k][0]; /*Nowa wspolrzedna x*/
+				int ny = y + kierunki[k][1]; /*Nowa wspolrzedna y*/
+				
+				if(nx >= 0 && nx < plansza->wiersze && ny >= 0 && ny < plansza->kolumny){ /*Sprawdzenie, czy sasiednie pole znajduje sie w granicach planszy*/
+					if(plansza->pola[nx][ny].mina){ /*Sprawdzenie, czy sasiednie pole zawiera mine*/
+						pole->sasiednie_miny++; /*Jesli sasiednie pole zawiera mine, nastepuje zwiekszenie liczby sasiednich min biezacego pola*/
+					}
+				}
+			}
+		}
+	}
+}
+
+/*	Funkcja wypisz_plik
+	Wczytuje i wypisuje zawartosc pliku.
+	Parametry:
+		nazwa_pliku - wskaznik do ciagu znakow zawierajacy nazwe pliku
+	Dzialanie:
+		Wypisuje tekst znajdujacy sie w pliku o podanej nazwie linia po linii.
+*/
+
+void wypisz_plik(const char* nazwa_pliku){
+	FILE* plik = fopen(nazwa_pliku, "r"); /*Otworzenie pliku w trybie odczytu*/
+	if(!plik){ /*Obsluga bledu, jesli plik nie istnieje - wypisanie komunikatu i przerwanie funkcji*/
+		printf("Nie mozna otworzyc pliku: %s\n", nazwa_pliku);
+		return;
+	}
+	char linia[256]; /*Bufor na linie tekstu (maksymalnie 255 znakow)*/
+	while(fgets(linia, sizeof(linia), plik)){ /*Czytanie linii, dopoki sa w pliku*/
+		printf("%s", linia); /*Wypisanie linii na ekran*/
+	}
+	fclose(plik); /*Zamkniecie pliku*/
+}
+
+/*
 void wypisz_plansze_widoczna(Plansza* plansza){
 	for (int i = 0; i < plansza->wiersze; i++){
 		for (int j = 0; j < plansza->kolumny; j++){
@@ -155,24 +256,15 @@ void wypisz_plansze_logiczna(Plansza* plansza){
 		printf("\n");
 	}
 }
+*/
 
 int main(){
-	FILE *logo = fopen("logo", "r");
 	int trudnosc;
-    if (logo == NULL) {
-		perror("Nie można otworzyć pliku");
-		return 1;
-    }
-
-    char linia[256];
-    while (fgets(linia, sizeof(linia), logo)) {
-		printf("%s", linia);
-    }
+	wypisz_plik("logo");
 	printf("Witaj w grze Minesweeper!\n");
 	printf("Wybierz poziom trudnosci:\n");
 	printf("Latwy\t\t- 1\nNormalny\t- 2\nTrudny\t\t- 3\n");
 	scanf("%d", &trudnosc);
 	printf("Wybrany poziom trudnosci to: %d\n", trudnosc);	
-	fclose(logo);
 	return 0;
 }
