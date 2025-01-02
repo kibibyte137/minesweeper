@@ -238,6 +238,45 @@ void flaga(Plansza* plansza, int x, int y){
 	}
 }
 
+/*	Funkcja wypisz_plansze_widoczna
+*/
+void wypisz_plansze_widoczna(Plansza* plansza){
+	if(!plansza){
+		printf("Blad. Plansza nie istnieje.\n");
+		return;
+	}
+	for(int i = 0; i < plansza->wiersze; i++){
+		for(int j = 0; j < plansza->kolumny; j++){
+			Pole pole = plansza->pola[i][j];
+			printf("%c ", SYMBOL_POLA(pole));
+		}
+		printf("\n");
+	}
+}
+
+/*	Funkcja wypisz_plansze_logiczna
+*/
+void wypisz_plansze_logiczna(Plansza* plansza){
+	if(!plansza){
+		printf("Blad. Plansza nie istnieje.\n");
+		return;
+	}
+	for(int i = 0; i < plansza->wiersze; i++){
+		for(int j = 0; j < plansza->kolumny; j++){
+			Pole pole = plansza->pola[i][j];
+			
+			if(CZY_MINA(pole)){
+				printf("%c ", MINA);
+			} else if(pole.sasiednie_miny > 0){
+				printf("%d ", pole.sasiednie_miny);
+			} else {
+				printf("%c ", PUSTE);
+			}
+		}
+		printf("\n");
+	}
+}
+
 /*	Funkcja wypisz_plik
 	Wczytuje i wypisuje zawartosc pliku.
 	Parametry:
@@ -258,27 +297,6 @@ void wypisz_plik(const char* nazwa_pliku){
 	}
 	fclose(plik); /*Zamkniecie pliku*/
 }
-
-/*
-void wypisz_plansze_widoczna(Plansza* plansza){
-	for (int i = 0; i < plansza->wiersze; i++){
-		for (int j = 0; j < plansza->kolumny; j++){
-			printf("%c ", plansza->plansza_widoczna[i][j]);
-		}
-		printf("\n");
-	}
-}
-
-
-void wypisz_plansze_logiczna(Plansza* plansza){
-	for (int i = 0; i < plansza->wiersze; i++){
-		for (int j = 0; j < plansza->kolumny; j++){
-			printf("%c ", plansza->plansza_logiczna[i][j]);
-		}
-		printf("\n");
-	}
-}
-*/
 
 int main(){
 	Plansza* plansza = NULL;
@@ -314,7 +332,6 @@ int main(){
 			miny = 99;
 			break;
 		case 4:
-			int wiersze, kolumny, miny;
 			printf("Wybrany poziom trudnosci to: Wlasna plansza.\n");
 			
 			printf("Podaj liczbe wierszy planszy:\n");
@@ -351,6 +368,8 @@ int main(){
 		rozmiesc_miny(plansza);
 		oblicz_sasiednie_miny(plansza);
 		printf("Plansza zostala poprawnie utworzona!\n");
+		wypisz_plansze_logiczna(plansza);
+		wypisz_plansze_widoczna(plansza);
 		zwolnij_plansze(plansza);
 	}
 	
