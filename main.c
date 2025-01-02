@@ -216,6 +216,28 @@ void oblicz_sasiednie_miny(Plansza* plansza){
 	}
 }
 
+/*	Funkcja flaga
+	Ustawia lub usuwa flage na polu planszy w zaleznosci od aktualnego stanu pola.
+	Parametry:
+		plansza - wskaznik na strukture Plansza, ktora zawiera informacje o calej planszy gry
+		x - numer wiersza na planszy (indeksowany od 0)
+		y - numer kolumny na planszy (indeksowany od 0)
+	Dzialanie:
+		- Jesli pole jest zakryte, funkcja ustawia flage na tym polu.
+		- Jesli pole juz posiada flage, funkcja usuwa flage, przywracajac pole do stanu zakrytego.
+*/
+
+void flaga(Plansza* plansza, int x, int y){
+	Pole* pole = &plansza->pola[x][y]; /*Pobranie wskaznika na konkretne pole na planszy*/
+	if(CZY_ZAKRYTE(*pole)){ /*Sprawdzenie, czy pole jest zakryte*/
+		pole->stan = FLAGA; /*Ustawienie flagi na zakrytym polu*/
+	} else if(CZY_FLAGA(*pole)){ /*Sprawdzenie, czy pole juz posiada flage*/
+		pole->stan = ZAKRYTE; /*Usuniecie flagi, ustawienie stanu pola na ZAKRYTE*/
+	} else {
+		printf("Nie mozna ustawic flagi na polu o wspolrzednych x:%d y:%d.", x, y); /*Wypisanie komunikatu o bledzie*/
+	}
+}
+
 /*	Funkcja wypisz_plik
 	Wczytuje i wypisuje zawartosc pliku.
 	Parametry:
@@ -259,12 +281,71 @@ void wypisz_plansze_logiczna(Plansza* plansza){
 */
 
 int main(){
-	int trudnosc;
+	Plansza* plansza = NULL;
+	int trudnosc, mnoznik, wiersze, kolumny, miny;
+	
 	wypisz_plik("logo");
 	printf("Witaj w grze Minesweeper!\n");
 	printf("Wybierz poziom trudnosci:\n");
-	printf("Latwy\t\t- 1\nNormalny\t- 2\nTrudny\t\t- 3\n");
+	printf("Latwy\t\t- 1\nNormalny\t- 2\nTrudny\t\t- 3\nWlasna plansza\t- 4\n");
+	
 	scanf("%d", &trudnosc);
-	printf("Wybrany poziom trudnosci to: %d\n", trudnosc);	
+	
+	switch(trudnosc){
+		case 1:
+			printf("Wybrany poziom trudnosci to: Latwy.\n");
+			mnoznik = 1;
+			plansza = alokuj_plansze(9, 9);
+			if(plansza != NULL){
+				inicjuj_plansze(plansza, 10);
+				rozmiesc_miny(plansza);
+				oblicz_sasiednie_miny(plansza);
+			}
+			break;
+		case 2:
+			printf("Wybrany poziom trudnosci to: Normalny.\n");
+			mnoznik = 2;
+			plansza = alokuj_plansze(16, 16);
+			if(plansza != NULL){
+				inicjuj_plansze(plansza, 40);
+				rozmiesc_miny(plansza);
+				oblicz_sasiednie_miny(plansza);
+			}
+			break;
+		case 3:
+			printf("Wybrany poziom trudnosci to: Trudny.\n");
+			mnoznik = 3;
+			plansza = alokuj_plansze(16, 30);
+			if(plansza != NULL){
+				inicjuj_plansze(plansza, 99);
+				rozmiesc_miny(plansza);
+				oblicz_sasiednie_miny(plansza);
+			}
+			break;
+		case 4:
+			int wiersze, kolumny, miny;
+			printf("Wybrany poziom trudnosci to: Wlasna plansza.\n");
+			printf("Podaj liczbe wierszy planszy:\n");
+			scanf("%d", &wiersze);
+			printf("Podaj liczbe kolumn planszy:\n");
+			scanf("%d", &kolumny);
+			printf("Podaj liczbe min na planszy:\n");
+			scanf("%d", &miny);
+			printf("Tworze plansze %d x %d o liczbie min: %d.\n", wiersze, kolumny, miny);
+			plansza = alokuj_plansze(wiersze, kolumny);
+			if(plansza != NULL){
+				inicjuj_plansze(plansza, miny);
+				rozmiesc_miny(plansza);
+				oblicz_sasiednie_miny(plansza);
+			}
+			break;
+		default:
+			printf("Nieprawidlowy wybor poziomu trudnosci.\n");
+			return 1;
+	}
+	if(plansza != NULL){
+		printf("Plansza zostala poprawnie utworzona!\n");
+		zwolnij_plansze(plansza);
+	}
 	return 0;
 }
