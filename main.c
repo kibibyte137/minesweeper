@@ -295,57 +295,64 @@ int main(){
 		case 1:
 			printf("Wybrany poziom trudnosci to: Latwy.\n");
 			mnoznik = 1;
-			plansza = alokuj_plansze(9, 9);
-			if(plansza != NULL){
-				inicjuj_plansze(plansza, 10);
-				rozmiesc_miny(plansza);
-				oblicz_sasiednie_miny(plansza);
-			}
+			wiersze = 9;
+			kolumny = 9;
+			miny = 10;
 			break;
 		case 2:
 			printf("Wybrany poziom trudnosci to: Normalny.\n");
 			mnoznik = 2;
-			plansza = alokuj_plansze(16, 16);
-			if(plansza != NULL){
-				inicjuj_plansze(plansza, 40);
-				rozmiesc_miny(plansza);
-				oblicz_sasiednie_miny(plansza);
-			}
+			wiersze = 16;
+			kolumny = 16;
+			miny = 40;
 			break;
 		case 3:
 			printf("Wybrany poziom trudnosci to: Trudny.\n");
 			mnoznik = 3;
-			plansza = alokuj_plansze(16, 30);
-			if(plansza != NULL){
-				inicjuj_plansze(plansza, 99);
-				rozmiesc_miny(plansza);
-				oblicz_sasiednie_miny(plansza);
-			}
+			wiersze = 16;
+			kolumny = 30;
+			miny = 99;
 			break;
 		case 4:
 			int wiersze, kolumny, miny;
 			printf("Wybrany poziom trudnosci to: Wlasna plansza.\n");
+			
 			printf("Podaj liczbe wierszy planszy:\n");
 			scanf("%d", &wiersze);
+			if(wiersze < 0){
+				printf("Niepoprawna liczba wierszy.");
+				return 2;
+			}
+			
 			printf("Podaj liczbe kolumn planszy:\n");
 			scanf("%d", &kolumny);
+			if(kolumny  < 0){
+				printf("Niepoprawna liczba kolumn.");
+				return 3;
+			}
+			
 			printf("Podaj liczbe min na planszy:\n");
 			scanf("%d", &miny);
-			printf("Tworze plansze %d x %d o liczbie min: %d.\n", wiersze, kolumny, miny);
-			plansza = alokuj_plansze(wiersze, kolumny);
-			if(plansza != NULL){
-				inicjuj_plansze(plansza, miny);
-				rozmiesc_miny(plansza);
-				oblicz_sasiednie_miny(plansza);
+			if(miny <= 0 || miny >= (wiersze * kolumny)){
+				printf("Niepoprawna liczba min.");
+				return 4;
 			}
+			
+			printf("Tworze plansze %d x %d o liczbie min: %d.\n", wiersze, kolumny, miny);
 			break;
 		default:
 			printf("Nieprawidlowy wybor poziomu trudnosci.\n");
 			return 1;
 	}
+	
+	plansza = alokuj_plansze(wiersze, kolumny);
 	if(plansza != NULL){
+		inicjuj_plansze(plansza, miny);
+		rozmiesc_miny(plansza);
+		oblicz_sasiednie_miny(plansza);
 		printf("Plansza zostala poprawnie utworzona!\n");
 		zwolnij_plansze(plansza);
 	}
+	
 	return 0;
 }
