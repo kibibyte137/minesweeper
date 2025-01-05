@@ -1,28 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <time.h>
 
 /*Symbole graficznej reprezentacji planszy*/
-#define PUSTE		'.'  		/*Odkryte puste pole*/
 #define ZAKRYTE		'#'			/*Zakryte pole*/
+#define PUSTE		'.'  		/*Odkryte puste pole*/
 #define MINA		'X'			/*Odkryte pole z miną*/
 #define FLAGA		'P'			/*Zakryte pole z flagą*/
 #define LICZBA(x)	('0' + (x))	/*Odkryte pole z liczbą (1-8)*/
-
-/*Warunki sprawdzania stanu pola*/
-#define CZY_PUSTE(pole)		((pole).sasiednie_miny == 0 && (pole).mina == 0)
-#define CZY_ZAKRYTE(pole)	((pole).stan == ZAKRYTE)
-#define CZY_FLAGA(pole)		((pole).stan == FLAGA)
-#define CZY_MINA(pole)		((pole).mina == 1)
-#define CZY_LICZBA(pole)	((pole).sasiednie_miny > 0 && (pole).mina == 0)
-#define CZY_ODKRYTE(pole)	((pole).stan != ZAKRYTE && (pole).stan != FLAGA)
-
-/*Symbol pola na podstawie jego stanu*/
-#define SYMBOL_POLA(pole) \
-	(CZY_ZAKRYTE(pole) ? ZAKRYTE : \
-	CZY_FLAGA(pole) ? FLAGA : \
-	CZY_MINA(pole) ? MINA : \
-	CZY_LICZBA(pole) ? LICZBA((pole).sasiednie_miny) : PUSTE)
 
 typedef struct{	/*Struktura dla wspolrzednych*/
 	int x;		/*Numer wiersza*/
@@ -30,9 +16,10 @@ typedef struct{	/*Struktura dla wspolrzednych*/
 } Punkt;
 
 typedef struct{				/*Struktura dla pola*/
-	int mina;				/*1, jesli pole zawiera mine, 0 w przeciwnym wypadku*/
+	bool zakryte;			/*true, jesli pole jest zakryte, false w przeciwnym wypadku*/
+	bool mina;				/*true, jesli pole zawiera mine, false w przeciwnym wypadku*/
+	bool flaga;				/*true, jesli pole posiada flage, false w przeciwnym wypadku*/
 	int sasiednie_miny;		/*Liczba sasiadujacych min*/
-	char stan;				/*Stan pola: ZAKRYTE, ODKRYTE, FLAGA*/
 	Punkt wspolrzedne;		/*Współrzedne pola (wiersz, kolumna)*/
 } Pole;
 
@@ -83,7 +70,6 @@ Plansza* alokuj_plansze(int wiersze, int kolumny){
 			return NULL;
 		}
 	}
-	
 	return plansza;
 }
 
@@ -93,7 +79,7 @@ Plansza* alokuj_plansze(int wiersze, int kolumny){
 		plansza - wskaznik do struktury Plansza z zaalokowana pamiecia
 		liczba_min - liczba min do ustawienia na planszy
 	Dzialanie:
-		Ustawia wszystkie pola jako zakryte, bez min, z zerowa liczba sasiadujacych min.
+		Ustawia wszystkie pola jako zakryte, bez min, bez flag, z zerowa liczba sasiadujacych min.
 		Ustawia liczbe min w strukturze Plansza.
 */
 
@@ -109,15 +95,14 @@ void inicjuj_plansze(Plansza* plansza, int liczba_min){
 	for(int i = 0; i < plansza->wiersze; i++){
 		for(int j = 0; j < plansza->kolumny; j++){
 			plansza->pola[i][j] = (Pole){
-				.mina = 0,				/*Pole poczatkowo nie zawiera miny*/
-				.sasiednie_miny = 0,	/*Brak sasiadujacych min*/
-				.stan = ZAKRYTE,		/*Pole jest zakryte*/
-				.wspolrzedne = {i, j}	/*Wspolrzedne pola*/
+				.zakryte = true,			/*Pole poczatkowo jest zakryte*/
+				.mina = false,				/*Pole poczatkowo nie zawiera miny*/
+				.flaga = false,				/*Pole poczatkowo nie posiada flagi*/
+				.sasiednie_miny = 0,		/*Brak sasiadujacych min*/
+				.wspolrzedne = {i, j}		/*Wspolrzedne pola*/
 			};
 		}
 	}
-	
-	/*Funkcja rozmiesc_miny (logika rozmieszczania min planowana jest jego osobna funkcja)*/
 }
 
 /*	Funkcja zwolnij_plansze
@@ -165,8 +150,8 @@ void rozmiesc_miny(Plansza* plansza){
 		
 		Pole* pole = &plansza->pola[losowy_wiersz][losowa_kolumna];
 		
-		if(CZY_ZAKRYTE(*pole) && !pole->mina){ /*Mine umiescic mozna tylko na polu zakrytym, ktore nie ma jeszcze miny*/
-			pole->mina = 1; /*Ustawienie miny*/
+		if(pole->zakryte && !pole->mina){ /*Mine umiescic mozna tylko na polu zakrytym, ktore nie ma jeszcze miny*/
+			pole->mina = true; /*Ustawienie miny*/
 			miny_do_umieszczenia--; /*Zmniejszenie liczby min do umieszczenia o 1*/
 		}
 	}
@@ -229,16 +214,36 @@ void oblicz_sasiednie_miny(Plansza* plansza){
 
 void flaga(Plansza* plansza, int x, int y){
 	Pole* pole = &plansza->pola[x][y]; /*Pobranie wskaznika na konkretne pole na planszy*/
-	if(CZY_ZAKRYTE(*pole)){ /*Sprawdzenie, czy pole jest zakryte*/
-		pole->stan = FLAGA; /*Ustawienie flagi na zakrytym polu*/
-	} else if(CZY_FLAGA(*pole)){ /*Sprawdzenie, czy pole juz posiada flage*/
-		pole->stan = ZAKRYTE; /*Usuniecie flagi, ustawienie stanu pola na ZAKRYTE*/
+	if(pole->zakryte && !pole->flaga){ /*Sprawdzenie, czy pole jest zakryte i czy nie jest flaga*/
+		pole->flaga = true; /*Ustawienie flagi na zakrytym polu*/
+	} else if(pole->flaga){ /*Sprawdzenie, czy pole juz posiada flage*/
+		pole->flaga = false; /*Usuniecie flagi, ustawienie stanu pola na ZAKRYTE*/
 	} else {
 		printf("Nie mozna ustawic flagi na polu o wspolrzednych x:%d y:%d.", x, y); /*Wypisanie komunikatu o bledzie*/
 	}
 }
 
+
+char widoczny_symbol_pola(const Pole* pole){
+	if(pole->zakryte) return ZAKRYTE;
+	if(pole->flaga) return FLAGA;
+	if(pole->mina) return MINA;
+	if(pole->sasiednie_miny > 0 && !pole->mina) return LICZBA(pole->sasiednie_miny);
+	return PUSTE;
+}
+
+char logiczny_symbol_pola(const Pole* pole){
+	if(pole->mina) return MINA;
+	if(pole->sasiednie_miny > 0 && !pole->mina) return LICZBA(pole->sasiednie_miny);
+	return PUSTE;
+}
+
 /*	Funkcja wypisz_plansze_widoczna
+	Wypisuje widoczny stan planszy gry.
+	Parametry:
+		plansza - wskaznik na strukture Plansza, ktora zawiera informacje o calej planszy gry
+	Dzialanie:
+		Wypisuje stan planszy gry w postaci symboli, ktore reprezentuja rozne stany pol.
 */
 void wypisz_plansze_widoczna(Plansza* plansza){
 	if(!plansza){
@@ -247,14 +252,19 @@ void wypisz_plansze_widoczna(Plansza* plansza){
 	}
 	for(int i = 0; i < plansza->wiersze; i++){
 		for(int j = 0; j < plansza->kolumny; j++){
-			Pole pole = plansza->pola[i][j];
-			printf("%c ", SYMBOL_POLA(pole));
+			Pole* pole = &plansza->pola[i][j];
+			printf("%c ", widoczny_symbol_pola(pole));
 		}
 		printf("\n");
 	}
 }
 
 /*	Funkcja wypisz_plansze_logiczna
+	Wypisuje logiczny stan planszy gry (z uwzglednieniem informacji niewidocznych dla gracza).
+	Parametry:
+		plansza - wskaznik na strukture Plansza, ktora zawiera informacje o calej planszy gry
+	Dzialanie:
+		Wypisuje stan planszy gry w postaci symboli, ktore reprezentuja rozne stany pol.
 */
 void wypisz_plansze_logiczna(Plansza* plansza){
 	if(!plansza){
@@ -263,15 +273,8 @@ void wypisz_plansze_logiczna(Plansza* plansza){
 	}
 	for(int i = 0; i < plansza->wiersze; i++){
 		for(int j = 0; j < plansza->kolumny; j++){
-			Pole pole = plansza->pola[i][j];
-			
-			if(CZY_MINA(pole)){
-				printf("%c ", MINA);
-			} else if(pole.sasiednie_miny > 0){
-				printf("%d ", pole.sasiednie_miny);
-			} else {
-				printf("%c ", PUSTE);
-			}
+			Pole* pole = &plansza->pola[i][j];
+			printf("%c ", logiczny_symbol_pola(pole));
 		}
 		printf("\n");
 	}
