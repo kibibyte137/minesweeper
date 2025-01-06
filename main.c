@@ -24,9 +24,12 @@ typedef struct{				/*Struktura dla pola*/
 } Pole;
 
 typedef struct{		/*Struktura dla planszy*/
+	bool koniec_gry;
+	bool wygrana;
 	int wiersze;	/*Liczba wierszy planszy*/
 	int kolumny;	/*Liczba kolumn planszy*/
 	int miny;		/*Liczba min na planszy*/
+	int odkryte_pola;
 	Pole** pola;	/*Dwuwymiarowa tablica struktur Pole*/
 } Plansza; 
 
@@ -90,6 +93,9 @@ void inicjuj_plansze(Plansza* plansza, int liczba_min){
 	}
 	
 	plansza->miny = liczba_min; /*Ustawienie liczby min na planszy*/
+	plansza->koniec_gry = false;
+	plansza->wygrana = false;
+	plansza->odkryte_pola = 0;
 	
 	/*Inicjalizacja kazdego pola planszy*/
 	for(int i = 0; i < plansza->wiersze; i++){
@@ -217,12 +223,74 @@ void flaga(Plansza* plansza, int x, int y){
 	if(pole->zakryte && !pole->flaga){ /*Sprawdzenie, czy pole jest zakryte i czy nie jest flaga*/
 		pole->flaga = true; /*Ustawienie flagi na zakrytym polu*/
 	} else if(pole->flaga){ /*Sprawdzenie, czy pole juz posiada flage*/
-		pole->flaga = false; /*Usuniecie flagi, ustawienie stanu pola na ZAKRYTE*/
+		pole->flaga = false; /*Usuniecie flagi*/
 	} else {
-		printf("Nie mozna ustawic flagi na polu o wspolrzednych x:%d y:%d.", x, y); /*Wypisanie komunikatu o bledzie*/
+		printf("Nie mozna ustawic flagi na polu o wspolrzednych x:%d y:%d.\n", x, y); /*Wypisanie komunikatu o bledzie*/
 	}
 }
 
+void odkryj(Plansza* plansza, int x, int y){
+	if(plansza->koniec_gry){
+		printf("Gra zostala juz zakonczona.\n");
+		return;
+	}
+	
+	if(x < 0 || x >= plansza->wiersze || y < 0 || y >= plansza->kolumny){
+		printf("Wspolrzedne (%d, %d) sa poza zakresem planszy.\n", x, y);
+		return;
+	}
+	
+	Pole* pole = &plansza->pola[x][y];
+	
+	if (!pole->zakryte){
+		printf("Pole (%d, %d) jest juz odkryte.\n", x, y);
+		return;
+	}
+	
+	if(pole->flaga){
+		printf("Wybrane pole posiada flage. Czy chcesz kontynuowac? T/N\n");
+		char kontynuacja;
+		scanf("%c", &kontynuacja);
+		
+		if(kontynuacja == 'N'){
+			printf("Pole (%d, %d) nie zostalo odkryte.\n", x, y);
+			return;
+		} else if(kontynuacja != 'T'){
+			printf("Nieprawidlowy wybor. Pole (%d, %d) nie zostalo odkryte.\n", x, y);
+			return;
+		}
+	}
+	
+	pole->zakryte = false;
+	
+	if(pole->mina){
+		plansza->koniec_gry = true;
+		return;
+	}
+	
+	plansza->odkryte_pola++;
+	
+	if(pole->sasiednie_miny == 0){
+		int kierunki[8][2] = { /*Tablica przesuniec dla 8 kierunkow*/
+			{-1, -1},	{-1, 0},	{-1, 1},	/*Gorne sasiedzwtow*/
+			{ 0, -1},				{ 0, 1},	/*Lewe i prawe sasiedztwo*/
+			{ 1, -1},	{ 1, 0},	{ 1, 1}		/*Dolne sasiedztwo*/
+		};
+		
+		for(int k = 0; k < 8; k++){
+			int nx = x + kierunki[k][0]; /*Nowa wspolrzedna x*/
+			int ny = y + kierunki[k][1]; /*Nowa wspolrzedna y*/
+				
+			if(nx >= 0 && nx < plansza->wiersze && ny >= 0 && ny < plansza->kolumny){
+				odkryj(plansza, nx, ny);
+			}
+		}
+	}
+	
+	if(plansza->odkryte_pola == plansza->wiersze * plansza->kolumny - plansza->miny){
+		plansza->koniec_gry = true;
+	}
+}
 
 char widoczny_symbol_pola(const Pole* pole){
 	if(pole->zakryte) return ZAKRYTE;
@@ -302,6 +370,8 @@ void wypisz_plik(const char* nazwa_pliku){
 }
 
 int main(){
+	bool koniec_gry = false;
+	
 	Plansza* plansza = NULL;
 	int trudnosc, mnoznik, wiersze, kolumny, miny;
 	
