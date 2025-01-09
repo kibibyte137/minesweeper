@@ -2,6 +2,23 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <time.h>
+#include <string.h>
+
+#define BLACK "\033[30m"
+#define RED	"\033[31m"
+#define GREEN "\033[32m"
+#define YELLOW "\033[33m"
+#define BLUE "\033[34m"
+#define MAGENTA "\033[35m"
+#define CYAN "\033[36m"
+#define WHITE "\033[37m"
+
+#define BRIGHT_BLACK "\033[90m"
+#define BRIGHT_CYAN "\033[36m"
+
+#define BRIGHT_RED_BG "\033[101m"
+
+#define RESET "\033[0m"
 
 /*Symbole graficznej reprezentacji planszy*/
 #define ZAKRYTE		'#'			/*Zakryte pole*/
@@ -282,13 +299,16 @@ void odkryj(Plansza* plansza, int x, int y){
 			int ny = y + kierunki[k][1]; /*Nowa wspolrzedna y*/
 				
 			if(nx >= 0 && nx < plansza->wiersze && ny >= 0 && ny < plansza->kolumny){
-				odkryj(plansza, nx, ny);
+				if(plansza->pola[nx][ny].zakryte){
+					odkryj(plansza, nx, ny);
+				}
 			}
 		}
 	}
 	
 	if(plansza->odkryte_pola == plansza->wiersze * plansza->kolumny - plansza->miny){
 		plansza->koniec_gry = true;
+		plansza->wygrana = true;
 	}
 }
 
@@ -318,10 +338,35 @@ void wypisz_plansze_widoczna(Plansza* plansza){
 		printf("Blad. Plansza nie istnieje.\n");
 		return;
 	}
+	
+	const char* kolory[] = {RESET, CYAN, GREEN, RED, BLUE, YELLOW, BRIGHT_CYAN, MAGENTA, BRIGHT_BLACK};
+	
+	printf("     "); /*Odstep na indeksy wierszy*/
+	for(int i = 0; i < plansza->kolumny; i++){
+		printf("%3d", i);
+	}
+	printf("\n");
+	
+	printf("     ");
+	for(int i = 0; i < plansza -> kolumny; i++){
+		printf("___");
+	}
+	printf("\n");
+	
 	for(int i = 0; i < plansza->wiersze; i++){
+		printf("%3d |", i);
 		for(int j = 0; j < plansza->kolumny; j++){
 			Pole* pole = &plansza->pola[i][j];
-			printf("%c ", widoczny_symbol_pola(pole));
+			char symbol = widoczny_symbol_pola(pole);
+			
+			if(symbol >= '1' && symbol <= '8'){
+				int liczba = symbol - '0';
+				printf("%s%3c%s", kolory[liczba], symbol, RESET);
+			} else if (symbol == MINA){
+				printf(BRIGHT_RED_BG "%3c" RESET, symbol);
+			} else {
+				printf("%3c", symbol);
+			}
 		}
 		printf("\n");
 	}
@@ -339,12 +384,57 @@ void wypisz_plansze_logiczna(Plansza* plansza){
 		printf("Blad. Plansza nie istnieje.\n");
 		return;
 	}
+	
+	const char* kolory[] = {RESET, CYAN, GREEN, RED, BLUE, YELLOW, BRIGHT_CYAN, MAGENTA, BRIGHT_BLACK};
+	
+	printf("     "); /*Odstep na indeksy wierszy*/
+	for(int i = 0; i < plansza->kolumny; i++){
+		printf("%3d", i);
+	}
+	printf("\n");
+	
+	printf("     ");
+	for(int i = 0; i < plansza -> kolumny; i++){
+		printf("___");
+	}
+	printf("\n");
+	
 	for(int i = 0; i < plansza->wiersze; i++){
+		printf("%3d |", i);
 		for(int j = 0; j < plansza->kolumny; j++){
 			Pole* pole = &plansza->pola[i][j];
-			printf("%c ", logiczny_symbol_pola(pole));
+			char symbol = logiczny_symbol_pola(pole);
+			
+			if(symbol >= '1' && symbol <= '8'){
+				int liczba = symbol - '0';
+				printf("%s%3c%s", kolory[liczba], symbol, RESET);
+			} else if (symbol == MINA){
+				printf(BRIGHT_RED_BG "%3c" RESET, symbol);
+			} else {
+				printf("%3c", symbol);
+			}
 		}
 		printf("\n");
+	}
+}
+
+void odczytaj_polecenie(Plansza* plansza){
+	char komenda[8];
+	int x, y;
+	
+	printf("Podaj polecenie:\n");
+	scanf("%s", komenda);
+	
+	if(strcmp(komenda, "r") == 0){
+		scanf("%d %d", &x, &y);
+		odkryj(plansza, x, y);
+	} else if(strcmp(komenda, "f") == 0){
+		scanf("%d %d", &x, &y);
+		flaga(plansza, x, y);
+	} else if(strcmp(komenda, "k") == 0){
+		plansza->koniec_gry = true;
+	} else {
+		printf("Nieznane polecenie: %s\n", komenda);
 	}
 }
 
@@ -356,7 +446,7 @@ void wypisz_plansze_logiczna(Plansza* plansza){
 		Wypisuje tekst znajdujacy sie w pliku o podanej nazwie linia po linii.
 */
 
-void wypisz_plik(const char* nazwa_pliku){
+void wypisz_plik(const char* nazwa_pliku, const char* kolor){
 	FILE* plik = fopen(nazwa_pliku, "r"); /*Otworzenie pliku w trybie odczytu*/
 	if(!plik){ /*Obsluga bledu, jesli plik nie istnieje - wypisanie komunikatu i przerwanie funkcji*/
 		printf("Nie mozna otworzyc pliku: %s\n", nazwa_pliku);
@@ -364,8 +454,9 @@ void wypisz_plik(const char* nazwa_pliku){
 	}
 	char linia[256]; /*Bufor na linie tekstu (maksymalnie 255 znakow)*/
 	while(fgets(linia, sizeof(linia), plik)){ /*Czytanie linii, dopoki sa w pliku*/
-		printf("%s", linia); /*Wypisanie linii na ekran*/
+		printf("%s%s" RESET, kolor, linia); /*Wypisanie linii na ekran*/
 	}
+	printf("\n");
 	fclose(plik); /*Zamkniecie pliku*/
 }
 
@@ -375,10 +466,10 @@ int main(){
 	Plansza* plansza = NULL;
 	int trudnosc, mnoznik, wiersze, kolumny, miny;
 	
-	wypisz_plik("logo");
+	wypisz_plik("logo", "");
 	printf("Witaj w grze Minesweeper!\n");
 	printf("Wybierz poziom trudnosci:\n");
-	printf("Latwy\t\t- 1\nNormalny\t- 2\nTrudny\t\t- 3\nWlasna plansza\t- 4\n");
+	printf(GREEN "Latwy\t\t- 1\n" YELLOW "Normalny\t- 2\n" RED "Trudny\t\t- 3\n" CYAN "Wlasna plansza\t- 4\n" RESET);
 	
 	scanf("%d", &trudnosc);
 	
@@ -440,9 +531,20 @@ int main(){
 		inicjuj_plansze(plansza, miny);
 		rozmiesc_miny(plansza);
 		oblicz_sasiednie_miny(plansza);
-		printf("Plansza zostala poprawnie utworzona!\n");
+		printf("Plansza zostala poprawnie utworzona!\n\n");
+		while(!plansza->koniec_gry){
+			wypisz_plansze_widoczna(plansza);
+			odczytaj_polecenie(plansza);
+			
+			if(plansza->koniec_gry){
+				if(plansza->wygrana){
+					wypisz_plik("wygrana", GREEN);
+				} else {
+					wypisz_plik("przegrana", RED);
+				}
+			}
+		}
 		wypisz_plansze_logiczna(plansza);
-		wypisz_plansze_widoczna(plansza);
 		zwolnij_plansze(plansza);
 	}
 	
