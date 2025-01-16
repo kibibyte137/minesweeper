@@ -14,7 +14,8 @@
 #define WHITE "\033[37m"
 
 #define BRIGHT_BLACK "\033[90m"
-#define BRIGHT_CYAN "\033[36m"
+#define BRIGHT_CYAN "\033[96m"
+#define BRIGHT_RED "\033[91m"
 
 #define BRIGHT_RED_BG "\033[101m"
 
@@ -26,6 +27,10 @@
 #define MINA		'X'			/*Odkryte pole z miną*/
 #define FLAGA		'P'			/*Zakryte pole z flagą*/
 #define LICZBA(x)	('0' + (x))	/*Odkryte pole z liczbą (1-8)*/
+
+/*Stale potrzebne do zapisu wynikow*/
+#define MAX_WYNIKOW	100	/*Maksymalna liczba wynikow*/
+#define MAX_IMIE 16 /*Maksymalna liczba liter w imieniu*/
 
 typedef struct{	/*Struktura dla wspolrzednych*/
 	int x;		/*Numer wiersza*/
@@ -43,12 +48,20 @@ typedef struct{				/*Struktura dla pola*/
 typedef struct{		/*Struktura dla planszy*/
 	bool koniec_gry;
 	bool wygrana;
+	bool pierwszy_ruch;
 	int wiersze;	/*Liczba wierszy planszy*/
 	int kolumny;	/*Liczba kolumn planszy*/
 	int miny;		/*Liczba min na planszy*/
 	int odkryte_pola;
+	int wynik;
 	Pole** pola;	/*Dwuwymiarowa tablica struktur Pole*/
 } Plansza; 
+
+typedef struct{
+	char imie[16];
+	int wynik;
+}Wynik;
+
 
 /*	Funkcja alokuj_plansze
 	Alokuje pamiec dla struktury Plansza oraz dwuwymiarowej tabilcy pol.
@@ -112,7 +125,9 @@ void inicjuj_plansze(Plansza* plansza, int liczba_min){
 	plansza->miny = liczba_min; /*Ustawienie liczby min na planszy*/
 	plansza->koniec_gry = false;
 	plansza->wygrana = false;
+	plansza->pierwszy_ruch = true;
 	plansza->odkryte_pola = 0;
+	plansza->wynik = 0;
 	
 	/*Inicjalizacja kazdego pola planszy*/
 	for(int i = 0; i < plansza->wiersze; i++){
@@ -155,7 +170,7 @@ void zwolnij_plansze(Plansza* plansza){
 		Ustawia 'plansza->miny' min w losowych miejscach na planszy.
 */
 
-void rozmiesc_miny(Plansza* plansza){
+void rozmiesc_miny(Plansza* plansza, int start_x, int start_y){
 	if(!plansza){ /*Sprawdzenie, czy wskaznik plansza nie jest NULL*/
 		printf("Nie mozna rozmiescic min: wskaznik NULL\n");
 		return;
@@ -170,6 +185,10 @@ void rozmiesc_miny(Plansza* plansza){
 	while(miny_do_umieszczenia > 0){
 		int losowy_wiersz = rand() % wiersze; /*Losowy wiersz*/
 		int losowa_kolumna = rand() % kolumny; /*Losowa kolumna*/
+		
+		if ((losowy_wiersz >= start_x - 1 && losowy_wiersz <= start_x + 1) && (losowa_kolumna >= start_y - 1 && losowa_kolumna <= start_y + 1)) {
+			continue;
+		}
 		
 		Pole* pole = &plansza->pola[losowy_wiersz][losowa_kolumna];
 		
@@ -246,6 +265,12 @@ void flaga(Plansza* plansza, int x, int y){
 	}
 }
 
+void inicjuj_pierwszy_ruch(Plansza* plansza, int x, int y){
+	rozmiesc_miny(plansza, x, y);
+	oblicz_sasiednie_miny(plansza);
+	plansza->pierwszy_ruch = false;
+}
+
 void odkryj(Plansza* plansza, int x, int y){
 	if(plansza->koniec_gry){
 		printf("Gra zostala juz zakonczona.\n");
@@ -259,6 +284,10 @@ void odkryj(Plansza* plansza, int x, int y){
 	
 	Pole* pole = &plansza->pola[x][y];
 	
+	if(plansza->pierwszy_ruch){
+		inicjuj_pierwszy_ruch(plansza, x, y);
+	}
+	
 	if (!pole->zakryte){
 		printf("Pole (%d, %d) jest juz odkryte.\n", x, y);
 		return;
@@ -267,15 +296,18 @@ void odkryj(Plansza* plansza, int x, int y){
 	if(pole->flaga){
 		printf("Wybrane pole posiada flage. Czy chcesz kontynuowac? T/N\n");
 		char kontynuacja;
-		scanf("%c", &kontynuacja);
-		
-		if(kontynuacja == 'N'){
-			printf("Pole (%d, %d) nie zostalo odkryte.\n", x, y);
-			return;
-		} else if(kontynuacja != 'T'){
-			printf("Nieprawidlowy wybor. Pole (%d, %d) nie zostalo odkryte.\n", x, y);
-			return;
-		}
+		do {
+			scanf(" %c", &kontynuacja);
+			if(kontynuacja == 'N'){
+				printf("Pole (%d, %d) nie zostalo odkryte.\n", x, y);
+				return;
+			} else if(kontynuacja == 'T'){
+				pole->flaga = false;
+				break;
+			} else {
+				printf("Nieprawidlowy wybor. Sprobuj ponownie: T/N.\n");
+			}
+		} while(1);
 	}
 	
 	pole->zakryte = false;
@@ -313,8 +345,8 @@ void odkryj(Plansza* plansza, int x, int y){
 }
 
 char widoczny_symbol_pola(const Pole* pole){
-	if(pole->zakryte) return ZAKRYTE;
 	if(pole->flaga) return FLAGA;
+	if(pole->zakryte) return ZAKRYTE;
 	if(pole->mina) return MINA;
 	if(pole->sasiednie_miny > 0 && !pole->mina) return LICZBA(pole->sasiednie_miny);
 	return PUSTE;
@@ -364,6 +396,8 @@ void wypisz_plansze_widoczna(Plansza* plansza){
 				printf("%s%3c%s", kolory[liczba], symbol, RESET);
 			} else if (symbol == MINA){
 				printf(BRIGHT_RED_BG "%3c" RESET, symbol);
+			} else if (symbol == FLAGA){
+				printf(BRIGHT_RED "%3c" RESET, symbol);
 			} else {
 				printf("%3c", symbol);
 			}
@@ -422,7 +456,7 @@ void odczytaj_polecenie(Plansza* plansza){
 	char komenda[8];
 	int x, y;
 	
-	printf("Podaj polecenie:\n");
+	printf("\nPodaj polecenie:\n");
 	scanf("%s", komenda);
 	
 	if(strcmp(komenda, "r") == 0){
@@ -438,6 +472,11 @@ void odczytaj_polecenie(Plansza* plansza){
 	}
 }
 
+int oblicz_wynik(Plansza* plansza, int mnoznik){
+	plansza->wynik=mnoznik*plansza->odkryte_pola;
+	return plansza->wynik;
+}
+
 /*	Funkcja wypisz_plik
 	Wczytuje i wypisuje zawartosc pliku.
 	Parametry:
@@ -449,7 +488,7 @@ void odczytaj_polecenie(Plansza* plansza){
 void wypisz_plik(const char* nazwa_pliku, const char* kolor){
 	FILE* plik = fopen(nazwa_pliku, "r"); /*Otworzenie pliku w trybie odczytu*/
 	if(!plik){ /*Obsluga bledu, jesli plik nie istnieje - wypisanie komunikatu i przerwanie funkcji*/
-		printf("Nie mozna otworzyc pliku: %s\n", nazwa_pliku);
+		printf("Nie mozna otworzyc pliku: %s.\n", nazwa_pliku);
 		return;
 	}
 	char linia[256]; /*Bufor na linie tekstu (maksymalnie 255 znakow)*/
@@ -460,6 +499,81 @@ void wypisz_plik(const char* nazwa_pliku, const char* kolor){
 	fclose(plik); /*Zamkniecie pliku*/
 }
 
+int porownaj_wyniki(const void* a, const void* b) {
+    int wynik_a, wynik_b;
+	char imie_a[MAX_IMIE], imie_b[MAX_IMIE];
+	
+    sscanf((const char*)a, "%s %d", imie_a, &wynik_a);
+    sscanf((const char*)b, "%s %d", imie_b, &wynik_b);
+	
+	if(wynik_a != wynik_b){
+		return wynik_b - wynik_a;
+	}
+	
+	return strcmp(imie_a, imie_b);
+}
+
+void zapisz_wynik(const char* nazwa_pliku, const char* imie, int wynik){
+	FILE* plik = fopen(nazwa_pliku, "a");
+	if(!plik){
+		printf("Nie mozna otworzyc pliku: %s.\n", nazwa_pliku);
+		return;
+	}
+	if(fprintf(plik, "%-15s %d\n", imie, wynik) < 0) {
+		printf("Blad podczas zapisu do pliku: %s", nazwa_pliku);
+	}
+	fclose(plik);
+}
+
+void posortuj_wyniki_w_pliku(const char* nazwa_pliku) {
+	char wyniki[MAX_WYNIKOW][MAX_IMIE + 10]; // Bufor na linie z imieniem i wynikiem
+	int liczba_wynikow = 0;
+
+	FILE* plik = fopen(nazwa_pliku, "r");
+	if(!plik){
+		printf("Nie można otworzyć pliku do odczytu: %s.\n", nazwa_pliku);
+		return;
+	}
+
+	while(fgets(wyniki[liczba_wynikow], sizeof(wyniki[0]), plik)){
+		liczba_wynikow++;
+		if(liczba_wynikow >= MAX_WYNIKOW)break;
+	}
+	fclose(plik);
+
+	// Sortowanie wyników
+	qsort(wyniki, liczba_wynikow, sizeof(wyniki[0]), porownaj_wyniki);
+
+	// Nadpisanie pliku posortowaną listą
+	plik = fopen(nazwa_pliku, "w");
+	if(!plik){
+		printf("Nie można otworzyć pliku do zapisu: %s.\n", nazwa_pliku);
+		return;
+	}
+
+	for(int i = 0; i < liczba_wynikow; i++){
+		fprintf(plik, "%s", wyniki[i]);
+	}
+	fclose(plik);
+}
+
+void wypisz_top5(const char* nazwa_pliku){
+	FILE* plik = fopen(nazwa_pliku, "r");
+	if(!plik){
+		printf("Nie można otworzyć pliku do odczytu: %s.\n", nazwa_pliku);
+		return;
+	}
+	
+	char linia[256];
+	int licznik = 1;
+	
+	while(fgets(linia, sizeof(linia), plik) && licznik < 6){
+		printf("%d. %s", licznik, linia);
+		licznik++;
+	}
+	fclose(plik);
+}
+
 int main(){
 	bool koniec_gry = false;
 	
@@ -467,6 +581,7 @@ int main(){
 	int trudnosc, mnoznik, wiersze, kolumny, miny;
 	
 	wypisz_plik("logo", "");
+	
 	printf("Witaj w grze Minesweeper!\n");
 	printf("Wybierz poziom trudnosci:\n");
 	printf(GREEN "Latwy\t\t- 1\n" YELLOW "Normalny\t- 2\n" RED "Trudny\t\t- 3\n" CYAN "Wlasna plansza\t- 4\n" RESET);
@@ -529,10 +644,9 @@ int main(){
 	plansza = alokuj_plansze(wiersze, kolumny);
 	if(plansza != NULL){
 		inicjuj_plansze(plansza, miny);
-		rozmiesc_miny(plansza);
-		oblicz_sasiednie_miny(plansza);
 		printf("Plansza zostala poprawnie utworzona!\n\n");
 		while(!plansza->koniec_gry){
+			printf("\nAktualny wynik:" GREEN "%d\n\n" RESET, oblicz_wynik(plansza, mnoznik));
 			wypisz_plansze_widoczna(plansza);
 			odczytaj_polecenie(plansza);
 			
@@ -545,6 +659,15 @@ int main(){
 			}
 		}
 		wypisz_plansze_logiczna(plansza);
+		printf("\nWynik koncowy: " GREEN "%d\n" RESET, plansza->wynik);
+		printf("\nWpisz swoje imie:\n");
+		char imie[16];
+		scanf("%15s", imie);
+		zapisz_wynik("wyniki", imie, plansza->wynik);
+		posortuj_wyniki_w_pliku("wyniki");
+		wypisz_plik("podium","");
+		wypisz_top5("wyniki");
+		printf("\nDziekuje za gre, %s. Gratuluje wyniku! :)\n", imie);
 		zwolnij_plansze(plansza);
 	}
 	
