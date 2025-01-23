@@ -125,6 +125,6 @@ void posortuj_wyniki_w_pliku(const char* nazwa_pliku){
 	fclose(plik); /*Zamkniecie pliku po zapisie*/
 	
 	if (najwyzszy_wynik_po != najwyzszy_wynik_przed) { 	/*Wyswietlenie komunikatu, jesli najwyzszy wynik zmienil sie*/
-		printf(YELLOW "\nGratulacje! Osiagnieto nowy najwyzszy wynik!\nGracz:" RED " %s\n" YELLOW " Wynik:" RED " %d\n" YELLOW " Poprzedni najlepszy gracz: %s z wynikiem %d.\n" RESET, najwyzsze_imie_po, najwyzszy_wynik_po, najwyzsze_imie_przed, najwyzszy_wynik_przed);
+		printf(YELLOW "\nGratulacje! Osiagnieto nowy najwyzszy wynik!\nGracz:" RED " %s\n" YELLOW "Wynik:" RED " %d\n" YELLOW "Poprzedni najlepszy gracz: %s z wynikiem %d.\n" RESET, najwyzsze_imie_po, najwyzszy_wynik_po, najwyzsze_imie_przed, najwyzszy_wynik_przed);
 	}
 }

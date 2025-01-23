@@ -9,6 +9,13 @@ typedef struct{
 	int y;		/*Numer kolumny*/
 } Punkt;
 
+/*Struktura dla ruchow*/
+typedef struct{
+	int liczba_ruchow; 	/*Liczba wykonanych ruchow*/
+	int poprawne; 		/*Liczba poprawnych ruchow*/
+	Punkt** ruchy;		/*Dwuwymiarowa tablica struktur Punkt (lista ruchow)*/
+} Ruchy;
+
 /*Struktura dla pola*/
 typedef struct{				
 	bool zakryte;		/*true, jesli pole jest zakryte, false w przeciwnym wypadku*/

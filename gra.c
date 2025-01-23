@@ -59,7 +59,7 @@ void inicjuj_pierwszy_ruch(Plansza* plansza, int start_x, int start_y){
 		- Sprawdza, czy wszystkie pola niebedace minami zostaly odkryte, aby oznaczyc gre jako wygrana.
 */
 
-void odkryj(Plansza* plansza, int x, int y){
+void odkryj(Plansza* plansza, int x, int y, bool tryb_z_pliku){
 	if(plansza->koniec_gry){ /*Sprawdzenie, czy gra zostala zakonczona*/
 		printf("Gra zostala juz zakonczona.\n"); /*Wypisanie komunikatu*/
 		return; /*Zakonczenie dzialania funkcji*/
@@ -71,8 +71,11 @@ void odkryj(Plansza* plansza, int x, int y){
 	}
 	
 	Pole* pole = &plansza->pola[x][y]; /*Pobranie wskaznika na wybrane pole*/
-	if(plansza->pierwszy_ruch){ /*Zainicjowanie gry, jesli to pierwszy ruch gracza*/
-		inicjuj_pierwszy_ruch(plansza, x, y); 
+	
+	if(!tryb_z_pliku){
+		if(plansza->pierwszy_ruch){ /*Zainicjowanie gry, jesli to pierwszy ruch gracza*/
+			inicjuj_pierwszy_ruch(plansza, x, y); 
+		}
 	}
 	
 	if (!pole->zakryte){ /*Sprawdzenie, czy pole jest odkryte*/
@@ -120,7 +123,7 @@ void odkryj(Plansza* plansza, int x, int y){
 				
 			if(nx >= 0 && nx < plansza->wiersze && ny >= 0 && ny < plansza->kolumny){ /*Sprawdzenie, czy nowe sasiednie znajduja sie w granicach planszy*/
 				if(plansza->pola[nx][ny].zakryte){
-					odkryj(plansza, nx, ny); /*Odkrycie pola, jesli bylo zakryte*/
+					odkryj(plansza, nx, ny, tryb_z_pliku); /*Odkrycie pola, jesli bylo zakryte*/
 				}
 			}
 		}
@@ -153,7 +156,7 @@ void odczytaj_polecenie(Plansza* plansza){
 	
 	if(strcmp(komenda, "r") == 0){ /*Komenda "r" - odczytanie wspolrzednych i odkrycie pola*/
 		scanf("%d %d", &x, &y);
-		odkryj(plansza, x, y);
+		odkryj(plansza, x, y, false);
 	} else if(strcmp(komenda, "f") == 0){ /*Komenda "f" - odczytanie wspolrzednych i ustawienie/usuniecie flagi*/
 		scanf("%d %d", &x, &y);
 		flaga(plansza, x, y);

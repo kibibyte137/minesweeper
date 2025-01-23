@@ -15,7 +15,7 @@ void flaga(Plansza* plansza, int x, int y);
 void inicjuj_pierwszy_ruch(Plansza* plansza, int start_x, int start_y);
 
 /*Deklaracja funkcji odkryj*/
-void odkryj(Plansza* plansza, int x, int y);
+void odkryj(Plansza* plansza, int x, int y, bool tryb_z_pliku);
 
 /*Deklaracja funkcji odczytaj_polecenie*/
 void odczytaj_polecenie(Plansza* plansza);
