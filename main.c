@@ -9,14 +9,18 @@
 int main(int argc, char *argv[]){
 	int opt; /*Zmienna przechowujaca opcje getopt*/
 	int f_flag = 0; /*Flaga oznaczajaca wlaczenie trybu wczytywania z pliku*/
+	int t_flag = 0; /*Flaga oznaczajaca wlaczenie trybu testowania generacji plansz*/
 	char *plik = NULL; /*Zmienna przechowujaca nazwe pliku podana przez uzytkownika*/
 	
 	/*Parsowanie argumentow*/
-	while ((opt = getopt(argc, argv, "f:h")) != -1) {
-		switch (opt) {
+	while((opt = getopt(argc, argv, "f:ht")) != -1){
+		switch (opt){
 			case 'f':
 				f_flag = 1; /*Ustawienie flagi dla trybu wczytywania z pliku*/
 				plik = optarg; /*Pobranie nazwy pliku podanej po -f*/
+				break;
+			case 't':
+				t_flag = 1; /*Ustawienie flagi dla trybu testowania generacji plansz*/
 				break;
 			case 'h':
 				pomoc(); /*Wywolanie funkcji wyswietlajacej podreczna pomoc*/
@@ -28,15 +32,23 @@ int main(int argc, char *argv[]){
 		}
 	}
 
-	if (f_flag) {
+	if(f_flag){
 		/*Tryb wczytywania z pliku*/
-		if (plik) {
+		if(plik){
 			gra_z_pliku(plik); /*Symulacja gry na podstawie pliku*/
 		} else {
 			fprintf(stderr, "Nie podano nazwy pliku dla opcji -f.\n"); /*Obsluga bledu braku podania nazwy pliku*/
 			return 2; /*Zakonczenie programu z bledem*/
 		}
-	} else if (optind == 1) {
+	} else if(t_flag){	
+		printf("\n");
+		test(1);
+		printf("\n");
+		test(2);
+		printf("\n");
+		test(3);
+		printf("\n");
+	} else if(optind == 1){
 		/*Brak argumentow - klasyczna gra*/
 		klasyczna_gra(); /*Rozpoczecie klasycznej gry*/
 	}

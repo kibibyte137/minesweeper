@@ -10,4 +10,7 @@ void gra_z_pliku(const char *nazwa_pliku);
 /*Deklaracja funkcji pomoc*/
 void pomoc();
 
+/*Deklaracja funkcji testowej*/
+void test(int trudnosc);
+
 #endif

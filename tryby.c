@@ -97,6 +97,7 @@ void klasyczna_gra(){
 			if(plansza->koniec_gry){ /*Sprawdzenie, czy gra zakonczyla sie*/
 				if(plansza->wygrana){
 					wypisz_plik("wygrana", GREEN); /*Wypisanie ekranu wygranej*/
+					oblicz_wynik(plansza, mnoznik);
 				} else {
 					wypisz_plik("przegrana", RED); /*Wypisanie ekranu przegranej*/
 				}
@@ -172,3 +173,42 @@ void pomoc(){
 	printf("f [x] [y]\t- Ustaw lub usun flage na polu (x, y)\n");
 	printf("k\t\t- Zakoncz gre\n" RESET);
 }
+
+/*Test generacji planszy*/
+void test(int trudnosc){
+	int wiersze, kolumny, miny;
+	switch(trudnosc){
+		case 1:
+			wiersze = 9;
+			kolumny = 9;
+			miny = 10;
+			break;
+		case 2:
+			wiersze = 16;
+			kolumny = 16;
+			miny = 40;
+			break;
+		case 3:
+			wiersze = 16;
+			kolumny = 30;
+			miny = 99;
+			break;
+		default:
+			wiersze = 0;
+			kolumny = 0;
+			miny = 0;
+			break;
+	}
+	Plansza* plansza = alokuj_plansze(wiersze, kolumny);
+	if(plansza != NULL){
+		inicjuj_plansze(plansza, miny);
+		rozmiesc_miny(plansza, 0, 0);
+		oblicz_sasiednie_miny(plansza);
+		wypisz_plansze_logiczna(plansza);
+		zwolnij_plansze(plansza);
+	} else {
+		printf("Blad alokacji pamieci dla planszy.");
+		return;
+	}
+}
+	
