@@ -40,13 +40,14 @@ int main(int argc, char *argv[]){
 			fprintf(stderr, "Nie podano nazwy pliku dla opcji -f.\n"); /*Obsluga bledu braku podania nazwy pliku*/
 			return 2; /*Zakonczenie programu z bledem*/
 		}
-	} else if(t_flag){	
+	} else if(t_flag){
+		/*Tryb testowy*/
 		printf("\n");
-		test(1);
+		test(1); /*Test dla latwego poziomu trudnosci*/
 		printf("\n");
-		test(2);
+		test(2); /*Test dla normalnego poziomu trudnosci*/
 		printf("\n");
-		test(3);
+		test(3); /*Test dla trudnego poziomu trudnosci*/
 		printf("\n");
 	} else if(optind == 1){
 		/*Brak argumentow - klasyczna gra*/

@@ -167,6 +167,7 @@ void pomoc(){
 	printf("\nDostepne opcje uruchomienia:\n");
 	printf(YELLOW "./minesweeper\t\t\t- Tryb klasycznej gry\n");
 	printf("./minesweeper -f [nazwa_pliku]\t- Tryb wczytania planszy z pliku o podanej nazwie\n");
+	printf("./minesweeper -t\t\t- Tryb testowania generacji plansz\n");
 	printf("./minesweeper -h\t\t- Wyswietlenie podrecznej pomocy\n" RESET);
 	printf("\nDostepne polecenia (w trybie klasycznej gry):\n");
 	printf(CYAN "r [x] [y]\t- Odslon pole (x, y)\n");
@@ -178,17 +179,17 @@ void pomoc(){
 void test(int trudnosc){
 	int wiersze, kolumny, miny;
 	switch(trudnosc){
-		case 1:
+		case 1: /*Latwy poziom trudnosci*/
 			wiersze = 9;
 			kolumny = 9;
 			miny = 10;
 			break;
-		case 2:
+		case 2: /*Normalny poziom trudnosci*/
 			wiersze = 16;
 			kolumny = 16;
 			miny = 40;
 			break;
-		case 3:
+		case 3: /*Trudny poziom trudnosci*/
 			wiersze = 16;
 			kolumny = 30;
 			miny = 99;
@@ -199,15 +200,15 @@ void test(int trudnosc){
 			miny = 0;
 			break;
 	}
-	Plansza* plansza = alokuj_plansze(wiersze, kolumny);
+	Plansza* plansza = alokuj_plansze(wiersze, kolumny); /*Alokacja pamieci dla planszy*/
 	if(plansza != NULL){
-		inicjuj_plansze(plansza, miny);
-		rozmiesc_miny(plansza, 0, 0);
-		oblicz_sasiednie_miny(plansza);
-		wypisz_plansze_logiczna(plansza);
-		zwolnij_plansze(plansza);
+		inicjuj_plansze(plansza, miny); /*Inicjalizacja planszy*/
+		rozmiesc_miny(plansza, 0, 0); /*Rozmieszczenie min, ustawienie punktu (0, 0) jako poczatkowego ruchu*/
+		oblicz_sasiednie_miny(plansza); /*Obliczenie sasiednich min*/
+		wypisz_plansze_logiczna(plansza); /*Wypisanie planszy logicznej*/
+		zwolnij_plansze(plansza); /*Zwolnienie pamieci planszy*/
 	} else {
-		printf("Blad alokacji pamieci dla planszy.");
+		printf("Blad alokacji pamieci dla planszy."); /*Obsluga bledu alokacji pamieci dla planszy*/
 		return;
 	}
 }
