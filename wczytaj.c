@@ -81,16 +81,6 @@ void inicjuj_ruchy(Plansza* plansza, Ruchy* ruchy){
 			ruchy->poprawne++; /*Zwiekszenie licznika poprawnych ruchow*/
 		}
 		
-		/*Sprawdzenie czy gra sie zakonczyla*/
-		if(plansza->koniec_gry){
-			if(plansza->wygrana){
-					printf("\nWynik gry: " GREEN "1 - Gra zakonczyla sie powodzeniem.\n" RESET); /*Wygrana*/
-				} else {
-					printf("\nWynik gry: " RED "0 - Gra zakonczyla sie niepowodzeniem.\n" RESET); /*Przegrana*/
-				}
-			return; /*Wyjscie z funkcji*/
-		}
-		
 		printf("Ruch %d: (%d, %d)\n", i + 1, x, y); /*Wypisanie szczegolow ruchu*/
 		
 		odkryj(plansza, ruchy->ruchy[i]->x, ruchy->ruchy[i]->y, true); /*Odkrycie pola*/
@@ -99,6 +89,12 @@ void inicjuj_ruchy(Plansza* plansza, Ruchy* ruchy){
 	/*Sprawdzenie czy gra zostala ukonczona*/
 	if(!plansza->koniec_gry){
 		printf("\nWynik gry: " YELLOW "? - Gra nie zostala ukonczona.\n" RESET); 
+	} else {
+		if(plansza->wygrana){
+			printf("\nWynik gry: " GREEN "1 - Gra zakonczyla sie powodzeniem.\n" RESET); /*Wygrana*/
+		} else {
+			printf("\nWynik gry: " RED "0 - Gra zakonczyla sie niepowodzeniem.\n" RESET); /*Przegrana*/
+		}
 	}
 	
 	printf("Wynik gracza: " GREEN "%d\n" RESET, oblicz_wynik(plansza, mnoznik)); /*Wypisanie wyniku gracza*/
